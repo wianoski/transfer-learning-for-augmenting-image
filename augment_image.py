@@ -10,13 +10,13 @@ from tensorflow.keras.losses import categorical_crossentropy
 sys.path.append('./resources/libraries')
 import ei_tensorflow.training
 
-WEIGHTS_PATH = './transfer-learning-weights/keras/mobilenet_v2_weights_tf_dim_ordering_tf_kernels_1.0_160.h5'
+WEIGHTS_PATH = './transfer-learning-weights/edgeimpulse/MobileNetV2.0_35.96x96.grayscale.bsize_64.lr_0_005.epoch_260.val_loss_3.10.val_accuracy_0.35.hdf5'
 
-INPUT_SHAPE = (160, 160, 3)
+INPUT_SHAPE = (96, 96, 1)
 
 
 base_model = tf.keras.applications.MobileNetV2(
-    input_shape = INPUT_SHAPE, alpha=1,
+    input_shape = INPUT_SHAPE, alpha=0.35,
     weights = WEIGHTS_PATH
 )
 
@@ -28,12 +28,12 @@ model.add(InputLayer(input_shape=INPUT_SHAPE, name='x_input'))
 last_layer_index = -3
 model.add(Model(inputs=base_model.inputs, outputs=base_model.layers[last_layer_index].output))
 model.add(Reshape((-1, model.layers[-1].output.shape[3])))
-
-model.add(Dropout(0.25))
+model.add(Dense(10, activation='relu'))
+model.add(Dropout(0.1))
 model.add(Flatten())
 model.add(Dense(classes, activation='softmax'))
 
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005),
                 loss='categorical_crossentropy',
                 metrics=['accuracy'])
 
@@ -64,7 +64,7 @@ BATCH_SIZE = 32
 train_dataset = train_dataset.batch(BATCH_SIZE, drop_remainder=False)
 validation_dataset = validation_dataset.batch(BATCH_SIZE, drop_remainder=False)
 callbacks.append(BatchLoggerCallback(BATCH_SIZE, train_sample_count))
-model.fit(train_dataset, validation_data=validation_dataset, epochs=5, verbose=2, callbacks=callbacks, class_weight=ei_tensorflow.training.get_class_weights(Y_train))
+model.fit(train_dataset, validation_data=validation_dataset, epochs=20, verbose=2, callbacks=callbacks, class_weight=ei_tensorflow.training.get_class_weights(Y_train))
 
 print('')
 print('Initial training done.', flush=True)
